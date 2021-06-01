@@ -1,0 +1,47 @@
+id: chat_modem_pdu_add_sync_word
+label: pdu_add_sync_word
+category: '[chat_modem]'
+
+templates:
+  imports: import chat_modem
+  make: chat_modem.pdu_add_sync_word(${sync_word})
+
+#  Make one 'parameters' list entry for every parameter you want settable from the GUI.
+#     Keys include:
+#     * id (makes the value accessible as \$keyname, e.g. in the make entry)
+#     * label (label shown in the GUI)
+#     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
+parameters:
+- id: sync_word
+  label: sync_word
+  dtype: int
+
+#  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
+#  Keys include:
+#      * label (an identifier for the GUI)
+#      * domain (optional - stream or message. Default is stream)
+#      * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
+#      * vlen (optional - data stream vector length. Default is 1)
+#      * optional (optional - set to 1 for optional inputs. Default is 0)
+inputs:
+- label: msg_in
+  domain: message
+  dtype: message
+
+outputs:
+- label: msg_out
+  domain: message
+  dtype: message
+
+documentation: |+
+  Input:
+    expected packed np.uint8 (GNU Radio byte) converted to PDU
+  Output:
+    PDU of np.uint8 data type 
+  Example:
+    sync_word = 10 will add bits 00001010 at the end of PDU
+    sync_word = 114 will add bits 01110010 at the end of PDU
+    
+#  'file_format' specifies the version of the GRC yml format used in the file
+#  and should usually not be changed.
+file_format: 1
