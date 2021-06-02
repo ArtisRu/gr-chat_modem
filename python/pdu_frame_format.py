@@ -52,7 +52,6 @@ class pdu_frame_format(gr.sync_block):
             data.append(meta[1][j])
         data = data + [0]*(int(self.packet_len/8) - len(data) - (len(bin(self.sync_word)[2:]) + 7) // 8*8 )
         data.append(self.sync_word)
-        #print(data)
         send_pmt = pmt.make_u8vector(len(data), ord(' '))
         for j in range(len(data)):
             pmt.u8vector_set(send_pmt, j, ord(chr(data[j])))

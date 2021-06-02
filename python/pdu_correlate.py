@@ -33,6 +33,7 @@ class pdu_correlate(gr.sync_block):
             name="pdu_correlate",
             in_sig=[],
             out_sig=[])
+        #self.remove_sync_w = remove_sync_w
         self.print_corr = print_corr
         self.sync_word = bin(sync_word)[2:]
         self.sync_word_bits = []
@@ -54,8 +55,10 @@ class pdu_correlate(gr.sync_block):
             print("data:", data)
             print("correlation with sync_word:", corr)
             print("index of correlation maxima:", max_index)
-        
-        #data = data[max_index+len(self.sync_word_bits):]
+        #if self.remove_sync_w == 1:
+        #    data = data[max_index+len(self.sync_word_bits):]
+        #else:
+        #    data = data[max_index:] + data[:max_index]
         data = data[max_index:] + data[:max_index]
         send_pmt = pmt.make_u8vector(len(data), ord(' '))
         for k in range(len(data)):

@@ -36,7 +36,6 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 import chat_modem
-import numpy as np
 import osmosdr
 import time
 
@@ -80,7 +79,6 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         ##################################################
         self.samp_rate2 = samp_rate2 = 2e6
         self.samp_rate = samp_rate = 48e3
-        self.baud = baud = 9600
 
         ##################################################
         # Blocks
@@ -96,6 +94,11 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.tab_grid_layout_1 = Qt.QGridLayout()
         self.tab_layout_1.addLayout(self.tab_grid_layout_1)
         self.tab.addTab(self.tab_widget_1, 'freq')
+        self.tab_widget_2 = Qt.QWidget()
+        self.tab_layout_2 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tab_widget_2)
+        self.tab_grid_layout_2 = Qt.QGridLayout()
+        self.tab_layout_2.addLayout(self.tab_grid_layout_2)
+        self.tab.addTab(self.tab_widget_2, 'raster')
         self.top_grid_layout.addWidget(self.tab, 0, 0, 1, 1)
         for r in range(0, 1):
             self.top_grid_layout.setRowStretch(r, 1)
@@ -103,7 +106,7 @@ class SDR_tx(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setColumnStretch(c, 1)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_c(
             20000, #size
-            samp_rate2, #samp_rate
+            samp_rate, #samp_rate
             "", #name
             1 #number of inputs
         )
@@ -151,11 +154,43 @@ class SDR_tx(gr.top_block, Qt.QWidget):
 
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.tab_layout_0.addWidget(self._qtgui_time_sink_x_0_win)
+        self.qtgui_time_raster_sink_x_0 = qtgui.time_raster_sink_b(
+            samp_rate,
+            256,
+            40,
+            [],
+            [],
+            "",
+            1
+        )
+
+        self.qtgui_time_raster_sink_x_0.set_update_time(1/samp_rate)
+        self.qtgui_time_raster_sink_x_0.set_intensity_range(-1, 1)
+        self.qtgui_time_raster_sink_x_0.enable_grid(False)
+        self.qtgui_time_raster_sink_x_0.enable_axis_labels(True)
+
+        labels = ['', '', '', '', '',
+            '', '', '', '', '']
+        colors = [1, 0, 0, 0, 0,
+            0, 0, 0, 0, 0]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0, 1.0]
+
+        for i in range(1):
+            if len(labels[i]) == 0:
+                self.qtgui_time_raster_sink_x_0.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_time_raster_sink_x_0.set_line_label(i, labels[i])
+            self.qtgui_time_raster_sink_x_0.set_color_map(i, colors[i])
+            self.qtgui_time_raster_sink_x_0.set_line_alpha(i, alphas[i])
+
+        self._qtgui_time_raster_sink_x_0_win = sip.wrapinstance(self.qtgui_time_raster_sink_x_0.pyqwidget(), Qt.QWidget)
+        self.tab_layout_2.addWidget(self._qtgui_time_raster_sink_x_0_win)
         self.qtgui_freq_sink_x_0_0 = qtgui.freq_sink_c(
             1024, #size
             firdes.WIN_BLACKMAN_hARRIS, #wintype
             0, #fc
-            samp_rate2, #bw
+            samp_rate, #bw
             "", #name
             1
         )
@@ -216,21 +251,22 @@ class SDR_tx(gr.top_block, Qt.QWidget):
             bt=0.35,
             verbose=False,
             log=False)
-        self.chat_modem_pdu_frame_format_0 = chat_modem.pdu_frame_format(40, 114, 10)
-        self.chat_modem_pdu_char_to_ascii_0_0 = chat_modem.pdu_char_to_ascii(32)
+        self.chat_modem_pdu_frame_format_0 = chat_modem.pdu_frame_format(40, 114, 1)
         self.chat_modem_pdu_char_to_ascii_0 = chat_modem.pdu_char_to_ascii(32)
         self.blocks_pdu_to_tagged_stream_0 = blocks.pdu_to_tagged_stream(blocks.byte_t, 'packet_len')
+        self.blocks_packed_to_unpacked_xx_0 = blocks.packed_to_unpacked_bb(1, gr.GR_MSB_FIRST)
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.intern("a"), 8)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.chat_modem_pdu_char_to_ascii_0_0, 'msg_in'))
+        self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.chat_modem_pdu_frame_format_0, 'en'))
         self.msg_connect((self.chat_modem_pdu_char_to_ascii_0, 'msg_out'), (self.chat_modem_pdu_frame_format_0, 'msg_in'))
-        self.msg_connect((self.chat_modem_pdu_char_to_ascii_0_0, 'msg_out'), (self.chat_modem_pdu_frame_format_0, 'en'))
         self.msg_connect((self.chat_modem_pdu_frame_format_0, 'msg_out'), (self.blocks_pdu_to_tagged_stream_0, 'pdus'))
         self.msg_connect((self.qtgui_edit_box_msg_0, 'msg'), (self.chat_modem_pdu_char_to_ascii_0, 'msg_in'))
+        self.connect((self.blocks_packed_to_unpacked_xx_0, 0), (self.qtgui_time_raster_sink_x_0, 0))
+        self.connect((self.blocks_pdu_to_tagged_stream_0, 0), (self.blocks_packed_to_unpacked_xx_0, 0))
         self.connect((self.blocks_pdu_to_tagged_stream_0, 0), (self.digital_gmsk_mod_0, 0))
         self.connect((self.digital_gmsk_mod_0, 0), (self.rational_resampler_xxx_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.osmosdr_sink_0, 0))
@@ -249,20 +285,15 @@ class SDR_tx(gr.top_block, Qt.QWidget):
     def set_samp_rate2(self, samp_rate2):
         self.samp_rate2 = samp_rate2
         self.osmosdr_sink_0.set_sample_rate(self.samp_rate2)
-        self.qtgui_freq_sink_x_0_0.set_frequency_range(0, self.samp_rate2)
-        self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate2)
 
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-
-    def get_baud(self):
-        return self.baud
-
-    def set_baud(self, baud):
-        self.baud = baud
+        self.qtgui_freq_sink_x_0_0.set_frequency_range(0, self.samp_rate)
+        self.qtgui_time_raster_sink_x_0.set_update_time(1/self.samp_rate)
+        self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
 
 
 

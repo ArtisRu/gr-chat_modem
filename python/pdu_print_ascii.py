@@ -38,16 +38,14 @@ class pdu_print_ascii(gr.sync_block):
 
     def handle_msg(self, msg):
         meta = pmt.to_python(msg)
-        data = []
         for j in range(0,len(meta[1][:]),8):
             byte = meta[1][j:j+8]
-            vards = ''
-            for i in range(len(byte)):
-                vards = vards + str(byte[i])
-                if int(vards,2) != 0:
-                    data.append(chr(int(vards,2)))
-        print(data)
-
+            byte = ''.join(str(i) for i in byte) 
+            if byte == "11100100" or byte == "00000000":
+                pass
+            else:
+                byte = byte[-1:]+byte[0:-1]
+                print(chr(int(byte,2)))
 
     def work(self, input_items, output_items):
         pass
