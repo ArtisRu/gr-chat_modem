@@ -21,53 +21,47 @@
 
 
 import numpy as np
-from gnuradio import gr
 import pmt
+from gnuradio import gr
 
-class pdu_frame_format(gr.sync_block):
+class pdu_correlate(gr.sync_block):
     """
-    docstring for block pdu_frame_format
+    docstring for block pdu_correlate
     """
-    def __init__(self, packet_len, sync_word, repeat):
+    def __init__(self, sync_word, print_corr):
         gr.sync_block.__init__(self,
-            name="pdu_frame_format",
+            name="pdu_correlate",
             in_sig=[],
             out_sig=[])
-        flag = 0
-        self.flag = flag
-        self.packet_len = packet_len
-        self.sync_word = sync_word
-        self.repeat = repeat
+        self.print_corr = print_corr
+        self.sync_word = bin(sync_word)[2:]
+        self.sync_word_bits = []
+        for i in range(len(bin(sync_word)[2:])):
+            self.sync_word_bits.append(np.uint8(bin(sync_word)[2:][i]))
         self.message_port_register_in(pmt.intern("msg_in"))
-        self.message_port_register_in(pmt.intern("en"))
         self.message_port_register_out(pmt.intern("msg_out"))
         self.set_msg_handler(pmt.intern("msg_in"), self.handle_msg)
-        self.set_msg_handler(pmt.intern("en"), self.handle_msg_en)       
 
     def handle_msg(self, msg):
-        self.flag = 1
         meta = pmt.to_python(msg)
         data = []
         for j in range(len(meta[1][:])):
             data.append(meta[1][j])
-        data = data + [0]*(int(self.packet_len/8) - len(data) - (len(bin(self.sync_word)[2:]) + 7) // 8*8 )
-        data.append(self.sync_word)
         #print(data)
+        corr = np.correlate(data, self.sync_word_bits, mode = "valid")
+        max_index = np.where(corr == np.amax(corr))[0][0]
+        if self.print_corr == 1:
+            print("data:", data)
+            print("correlation with sync_word:", corr)
+            print("index of correlation maxima:", max_index)
+        
+        #data = data[max_index+len(self.sync_word_bits):]
+        data = data[max_index:] + data[:max_index]
         send_pmt = pmt.make_u8vector(len(data), ord(' '))
-        for j in range(len(data)):
-            pmt.u8vector_set(send_pmt, j, ord(chr(data[j])))
-        for k in range(self.repeat):
-            self.message_port_pub(pmt.intern("msg_out"), pmt.cons(pmt.PMT_NIL, send_pmt))
-        self.flag = 0
-
-    def handle_msg_en(self, msg):
-        if self.flag == 0:
-            data = [0]*int(self.packet_len/8 - 1)
-            data.append(self.sync_word)
-            send_pmt = pmt.make_u8vector(len(data), ord(' '))
-            for j in range(len(data)):
-                pmt.u8vector_set(send_pmt, j, data[j])
-            self.message_port_pub(pmt.intern("msg_out"), pmt.cons(pmt.PMT_NIL, send_pmt)) 
+        for k in range(len(data)):
+            pmt.u8vector_set(send_pmt, k, ord(chr(data[k])))
+        self.message_port_pub(pmt.intern("msg_out"), pmt.cons(pmt.PMT_NIL, send_pmt))
 
     def work(self, input_items, output_items):
         pass
+

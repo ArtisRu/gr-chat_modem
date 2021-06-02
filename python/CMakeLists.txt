@@ -34,7 +34,9 @@ GR_PYTHON_INSTALL(
     __init__.py
     pdu_add_sync_word.py
     pdu_char_to_ascii.py
-    pdu_frame_format.py DESTINATION ${GR_PYTHON_DIR}/chat_modem
+    pdu_frame_format.py
+    pdu_correlate.py
+    pdu_print_ascii.py DESTINATION ${GR_PYTHON_DIR}/chat_modem
 )
 
 ########################################################################

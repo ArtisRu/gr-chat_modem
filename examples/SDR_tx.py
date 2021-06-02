@@ -39,7 +39,6 @@ import chat_modem
 import numpy as np
 import osmosdr
 import time
-import pdu_utils
 
 from gnuradio import qtgui
 
@@ -79,7 +78,6 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.sps = sps = 4
         self.samp_rate2 = samp_rate2 = 2e6
         self.samp_rate = samp_rate = 48e3
         self.baud = baud = 9600
@@ -92,17 +90,12 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.tab_layout_0 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tab_widget_0)
         self.tab_grid_layout_0 = Qt.QGridLayout()
         self.tab_layout_0.addLayout(self.tab_grid_layout_0)
-        self.tab.addTab(self.tab_widget_0, 'msg')
+        self.tab.addTab(self.tab_widget_0, 'time')
         self.tab_widget_1 = Qt.QWidget()
         self.tab_layout_1 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tab_widget_1)
         self.tab_grid_layout_1 = Qt.QGridLayout()
         self.tab_layout_1.addLayout(self.tab_grid_layout_1)
-        self.tab.addTab(self.tab_widget_1, 'time')
-        self.tab_widget_2 = Qt.QWidget()
-        self.tab_layout_2 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tab_widget_2)
-        self.tab_grid_layout_2 = Qt.QGridLayout()
-        self.tab_layout_2.addLayout(self.tab_grid_layout_2)
-        self.tab.addTab(self.tab_widget_2, 'freq')
+        self.tab.addTab(self.tab_widget_1, 'freq')
         self.top_grid_layout.addWidget(self.tab, 0, 0, 1, 1)
         for r in range(0, 1):
             self.top_grid_layout.setRowStretch(r, 1)
@@ -157,7 +150,7 @@ class SDR_tx(gr.top_block, Qt.QWidget):
             self.qtgui_time_sink_x_0.set_line_alpha(i, alphas[i])
 
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.tab_layout_1.addWidget(self._qtgui_time_sink_x_0_win)
+        self.tab_layout_0.addWidget(self._qtgui_time_sink_x_0_win)
         self.qtgui_freq_sink_x_0_0 = qtgui.freq_sink_c(
             1024, #size
             firdes.WIN_BLACKMAN_hARRIS, #wintype
@@ -197,7 +190,7 @@ class SDR_tx(gr.top_block, Qt.QWidget):
             self.qtgui_freq_sink_x_0_0.set_line_alpha(i, alphas[i])
 
         self._qtgui_freq_sink_x_0_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0_0.pyqwidget(), Qt.QWidget)
-        self.tab_layout_2.addWidget(self._qtgui_freq_sink_x_0_0_win)
+        self.tab_layout_1.addWidget(self._qtgui_freq_sink_x_0_0_win)
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=int(samp_rate2),
                 decimation=int(samp_rate),
@@ -206,7 +199,6 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.qtgui_edit_box_msg_0 = qtgui.edit_box_msg(qtgui.STRING, 'a', '', False, False, '')
         self._qtgui_edit_box_msg_0_win = sip.wrapinstance(self.qtgui_edit_box_msg_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_edit_box_msg_0_win)
-        self.pdu_utils_pdu_to_bursts_X_0 = pdu_utils.pdu_to_bursts_b(pdu_utils.EARLY_BURST_BEHAVIOR__APPEND, 64)
         self.osmosdr_sink_0 = osmosdr.sink(
             args="numchan=" + str(1) + " " + ""
         )
@@ -222,11 +214,12 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.digital_gmsk_mod_0 = digital.gmsk_mod(
             samples_per_symbol=10,
             bt=0.35,
-            verbose=True,
+            verbose=False,
             log=False)
         self.chat_modem_pdu_frame_format_0 = chat_modem.pdu_frame_format(40, 114, 10)
         self.chat_modem_pdu_char_to_ascii_0_0 = chat_modem.pdu_char_to_ascii(32)
         self.chat_modem_pdu_char_to_ascii_0 = chat_modem.pdu_char_to_ascii(32)
+        self.blocks_pdu_to_tagged_stream_0 = blocks.pdu_to_tagged_stream(blocks.byte_t, 'packet_len')
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.intern("a"), 8)
 
 
@@ -236,10 +229,10 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.chat_modem_pdu_char_to_ascii_0_0, 'msg_in'))
         self.msg_connect((self.chat_modem_pdu_char_to_ascii_0, 'msg_out'), (self.chat_modem_pdu_frame_format_0, 'msg_in'))
         self.msg_connect((self.chat_modem_pdu_char_to_ascii_0_0, 'msg_out'), (self.chat_modem_pdu_frame_format_0, 'en'))
-        self.msg_connect((self.chat_modem_pdu_frame_format_0, 'msg_out'), (self.pdu_utils_pdu_to_bursts_X_0, 'bursts'))
+        self.msg_connect((self.chat_modem_pdu_frame_format_0, 'msg_out'), (self.blocks_pdu_to_tagged_stream_0, 'pdus'))
         self.msg_connect((self.qtgui_edit_box_msg_0, 'msg'), (self.chat_modem_pdu_char_to_ascii_0, 'msg_in'))
+        self.connect((self.blocks_pdu_to_tagged_stream_0, 0), (self.digital_gmsk_mod_0, 0))
         self.connect((self.digital_gmsk_mod_0, 0), (self.rational_resampler_xxx_0, 0))
-        self.connect((self.pdu_utils_pdu_to_bursts_X_0, 0), (self.digital_gmsk_mod_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.osmosdr_sink_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.qtgui_freq_sink_x_0_0, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.qtgui_time_sink_x_0, 0))
@@ -249,12 +242,6 @@ class SDR_tx(gr.top_block, Qt.QWidget):
         self.settings = Qt.QSettings("GNU Radio", "SDR_tx")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
-
-    def get_sps(self):
-        return self.sps
-
-    def set_sps(self, sps):
-        self.sps = sps
 
     def get_samp_rate2(self):
         return self.samp_rate2

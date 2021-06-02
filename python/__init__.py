@@ -35,4 +35,6 @@ except ImportError:
 from .pdu_add_sync_word import pdu_add_sync_word
 from .pdu_char_to_ascii import pdu_char_to_ascii
 from .pdu_frame_format import pdu_frame_format
+from .pdu_correlate import pdu_correlate
+from .pdu_print_ascii import pdu_print_ascii
 #

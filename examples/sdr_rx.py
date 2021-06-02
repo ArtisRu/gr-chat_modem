@@ -34,6 +34,7 @@ import signal
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
+import chat_modem
 import iio
 import numpy as np
 
@@ -87,13 +88,45 @@ class sdr_rx(gr.top_block, Qt.QWidget):
                 decimation=int(samp_rate2),
                 taps=None,
                 fractional_bw=None)
+        self.qtgui_time_raster_sink_x_0_0 = qtgui.time_raster_sink_b(
+            samp_rate,
+            256,
+            40,
+            [],
+            [],
+            "rx bits sync",
+            1
+        )
+
+        self.qtgui_time_raster_sink_x_0_0.set_update_time(0.010)
+        self.qtgui_time_raster_sink_x_0_0.set_intensity_range(-1, 1)
+        self.qtgui_time_raster_sink_x_0_0.enable_grid(False)
+        self.qtgui_time_raster_sink_x_0_0.enable_axis_labels(True)
+
+        labels = ['', '', '', '', '',
+            '', '', '', '', '']
+        colors = [1, 0, 0, 0, 0,
+            0, 0, 0, 0, 0]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0, 1.0]
+
+        for i in range(1):
+            if len(labels[i]) == 0:
+                self.qtgui_time_raster_sink_x_0_0.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_time_raster_sink_x_0_0.set_line_label(i, labels[i])
+            self.qtgui_time_raster_sink_x_0_0.set_color_map(i, colors[i])
+            self.qtgui_time_raster_sink_x_0_0.set_line_alpha(i, alphas[i])
+
+        self._qtgui_time_raster_sink_x_0_0_win = sip.wrapinstance(self.qtgui_time_raster_sink_x_0_0.pyqwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_time_raster_sink_x_0_0_win)
         self.qtgui_time_raster_sink_x_0 = qtgui.time_raster_sink_b(
             samp_rate,
             256,
             40,
             [],
             [],
-            "",
+            "rx bits",
             1
         )
 
@@ -159,8 +192,8 @@ class sdr_rx(gr.top_block, Qt.QWidget):
 
         self._qtgui_freq_sink_x_0_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_freq_sink_x_0_0_win)
-        self.iio_pluto_source_0 = iio.pluto_source('ip:pluto.local', int(433.59e6), int(samp_rate2), 20000000, 32768, False, True, True, 'manual', 32, '', True)
-        self.freq_xlating_fir_filter_xxx_0_0 = filter.freq_xlating_fir_filter_ccc(1, firdes.low_pass(1.0,samp_rate,10e3,100), 11e3, samp_rate)
+        self.iio_pluto_source_0 = iio.pluto_source('ip:pluto.local', int(433.6e6), int(samp_rate2), 20000000, 32768, False, True, True, 'slow_attack', 60, '', True)
+        self.freq_xlating_fir_filter_xxx_0_0 = filter.freq_xlating_fir_filter_ccc(1, firdes.low_pass(1.0,samp_rate,10e3,100), 0e3, samp_rate)
         self.digital_gmsk_demod_0 = digital.gmsk_demod(
             samples_per_symbol=10,
             gain_mu=0.175,
@@ -168,16 +201,20 @@ class sdr_rx(gr.top_block, Qt.QWidget):
             omega_relative_limit=0.005,
             freq_error=0.0,
             verbose=False,log=False)
-        self.blocks_unpacked_to_packed_xx_0 = blocks.unpacked_to_packed_bb(1, gr.GR_MSB_FIRST)
-        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char*1, '/home/artis/Desktop/test.bin', False)
-        self.blocks_file_sink_0.set_unbuffered(True)
+        self.chat_modem_pdu_correlate_0 = chat_modem.pdu_correlate(114, False)
+        self.blocks_tagged_stream_to_pdu_0 = blocks.tagged_stream_to_pdu(blocks.byte_t, 'packet_len')
+        self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(gr.sizeof_char, 1, 40, "packet_len")
+        self.blocks_pdu_to_tagged_stream_0 = blocks.pdu_to_tagged_stream(blocks.byte_t, 'packet_len')
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.blocks_unpacked_to_packed_xx_0, 0), (self.blocks_file_sink_0, 0))
-        self.connect((self.digital_gmsk_demod_0, 0), (self.blocks_unpacked_to_packed_xx_0, 0))
+        self.msg_connect((self.blocks_tagged_stream_to_pdu_0, 'pdus'), (self.chat_modem_pdu_correlate_0, 'msg_in'))
+        self.msg_connect((self.chat_modem_pdu_correlate_0, 'msg_out'), (self.blocks_pdu_to_tagged_stream_0, 'pdus'))
+        self.connect((self.blocks_pdu_to_tagged_stream_0, 0), (self.qtgui_time_raster_sink_x_0_0, 0))
+        self.connect((self.blocks_stream_to_tagged_stream_0, 0), (self.blocks_tagged_stream_to_pdu_0, 0))
+        self.connect((self.digital_gmsk_demod_0, 0), (self.blocks_stream_to_tagged_stream_0, 0))
         self.connect((self.digital_gmsk_demod_0, 0), (self.qtgui_time_raster_sink_x_0, 0))
         self.connect((self.freq_xlating_fir_filter_xxx_0_0, 0), (self.digital_gmsk_demod_0, 0))
         self.connect((self.freq_xlating_fir_filter_xxx_0_0, 0), (self.qtgui_freq_sink_x_0_0, 0))
@@ -195,7 +232,7 @@ class sdr_rx(gr.top_block, Qt.QWidget):
 
     def set_samp_rate2(self, samp_rate2):
         self.samp_rate2 = samp_rate2
-        self.iio_pluto_source_0.set_params(int(433.59e6), int(self.samp_rate2), 20000000, False, True, True, 'manual', 32, '', True)
+        self.iio_pluto_source_0.set_params(int(433.6e6), int(self.samp_rate2), 20000000, False, True, True, 'slow_attack', 60, '', True)
 
     def get_samp_rate(self):
         return self.samp_rate

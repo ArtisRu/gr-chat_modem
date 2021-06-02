@@ -21,5 +21,7 @@
 install(FILES
     chat_modem_pdu_add_sync_word.block.yml
     chat_modem_pdu_char_to_ascii.block.yml
-    chat_modem_pdu_frame_format.block.yml DESTINATION share/gnuradio/grc/blocks
+    chat_modem_pdu_frame_format.block.yml
+    chat_modem_pdu_correlate.block.yml
+    chat_modem_pdu_print_ascii.block.yml DESTINATION share/gnuradio/grc/blocks
 )
