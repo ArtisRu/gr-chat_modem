@@ -40,6 +40,10 @@ outputs:
   label: msg_out
   domain: message
 
+documentation: |+
+  Frame synchronizer. Block correlates calculates correlation between input
+  buffer and sync_word. Outputs shifted input starting from first bit of sync_word.
+  Output is pmt.u8vector (byte message).
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
 file_format: 1

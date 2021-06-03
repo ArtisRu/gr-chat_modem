@@ -251,7 +251,7 @@ class SDR_tx(gr.top_block, Qt.QWidget):
             bt=0.35,
             verbose=False,
             log=False)
-        self.chat_modem_pdu_frame_format_0 = chat_modem.pdu_frame_format(40, 114, 1)
+        self.chat_modem_pdu_frame_format_0 = chat_modem.pdu_frame_format(40, 114, 3)
         self.chat_modem_pdu_char_to_ascii_0 = chat_modem.pdu_char_to_ascii(32)
         self.blocks_pdu_to_tagged_stream_0 = blocks.pdu_to_tagged_stream(blocks.byte_t, 'packet_len')
         self.blocks_packed_to_unpacked_xx_0 = blocks.packed_to_unpacked_bb(1, gr.GR_MSB_FIRST)

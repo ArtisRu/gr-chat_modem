@@ -28,11 +28,15 @@ class pdu_print_ascii(gr.sync_block):
     """
     docstring for block pdu_print_ascii
     """
-    def __init__(self):
+    def __init__(self, sync_word):
         gr.sync_block.__init__(self,
             name="pdu_print_ascii",
             in_sig=[],
             out_sig=[])
+        self.sync_word = sync_word
+        self.sync_word_bits = format(sync_word, '08b')
+        self.sync_word_bits = self.sync_word_bits[1:] + self.sync_word_bits[:1]
+        #print("sync_word_bits", self.sync_word_bits)
         self.message_port_register_in(pmt.intern("msg_in"))
         self.set_msg_handler(pmt.intern("msg_in"), self.handle_msg)
 
@@ -41,7 +45,8 @@ class pdu_print_ascii(gr.sync_block):
         for j in range(0,len(meta[1][:]),8):
             byte = meta[1][j:j+8]
             byte = ''.join(str(i) for i in byte) 
-            if byte == "11100100" or byte == "00000000":
+            #print(byte)
+            if byte == self.sync_word_bits or byte == "00000000":
                 pass
             else:
                 byte = byte[-1:]+byte[0:-1]

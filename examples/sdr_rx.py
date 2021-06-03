@@ -249,7 +249,7 @@ class sdr_rx(gr.top_block, Qt.QWidget):
             omega_relative_limit=0.005,
             freq_error=0.0,
             verbose=False,log=False)
-        self.chat_modem_pdu_print_ascii_0 = chat_modem.pdu_print_ascii()
+        self.chat_modem_pdu_print_ascii_0 = chat_modem.pdu_print_ascii(114)
         self.chat_modem_pdu_correlate_0 = chat_modem.pdu_correlate(114, False)
         self.blocks_tagged_stream_to_pdu_0 = blocks.tagged_stream_to_pdu(blocks.byte_t, 'packet_len')
         self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(gr.sizeof_char, 1, 40, "packet_len")

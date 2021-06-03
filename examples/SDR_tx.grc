@@ -134,7 +134,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     packet_len: '40'
-    repeat: '1'
+    repeat: '3'
     sync_word: '114'
   states:
     bus_sink: false

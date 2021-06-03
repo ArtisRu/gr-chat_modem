@@ -44,7 +44,7 @@ documentation: |+
     input string = 'a'
     output = [97,0] = 0110000100000000 (bits)
 
-  Lengt of input string should NOT be higher than packet_len. For example if using packet_len = 8, input string should not be more than 2 characters.
+  Lengt of input string should NOT be higher than packet_len. For example if using packet_len = 16, input string should not be more than 2 characters.
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

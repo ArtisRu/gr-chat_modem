@@ -132,11 +132,12 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
+    sync_word: '114'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [904, 640.0]
+    coordinate: [904, 632.0]
     rotation: 0
     state: true
 - name: digital_gmsk_demod_0

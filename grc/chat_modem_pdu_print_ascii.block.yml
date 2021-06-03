@@ -4,14 +4,17 @@ category: '[chat_modem]'
 
 templates:
   imports: import chat_modem
-  make: chat_modem.pdu_print_ascii()
+  make: chat_modem.pdu_print_ascii(${sync_word})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
 #     * id (makes the value accessible as \$keyname, e.g. in the make entry)
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
-
+parameters:
+- id: sync_word
+  label: sync_word
+  dtype: int
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:
@@ -24,6 +27,12 @@ inputs:
 - id: msg_in
   label: msg_in
   domain: message
+
+documentation: |+
+  Input is expected to be message of bits. Input is sliced into 8bit chunks and coverted to corresponding ASCII char.
+  If 8bit chunk is 00000000 (idle frame) or sync_word it is not printed.
+  sync_word is padded with 0 at the end, example 114=11100100, so byte 11100100 will not be printed.
+  If sync_word is not present in data stream, sync_word should be 0.
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
