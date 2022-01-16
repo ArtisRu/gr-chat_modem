@@ -17,7 +17,7 @@ branch). This will NOT work with gnuradio 3.8.1.0 (default ubuntu 20.04 apt inst
  sudo make install
  sudo ldconfig
 ```
-Some examples are included in /examples folder. Main applications are SDR_tx.grc and SDR_rx.grc. Sometimes SDR_rx will not sync properly and output random chars, if that's the case both sdr_tx and sdr_rx should be restarted.
+Some examples are included in /examples folder. In examples I use 7bit Barker code for packet sync and GMSK modulation. Main applications are SDR_tx.grc and SDR_rx.grc. Sometimes SDR_rx will not sync properly and output random chars, if that's the case both sdr_tx and sdr_rx should be restarted.
 
 ![Example](/docs/example.png)
 
